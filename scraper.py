@@ -1,4 +1,6 @@
-from requests import Session
+from requests import Session, exceptions
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 from bs4 import BeautifulSoup
 import re
 import json
@@ -8,6 +10,10 @@ class Scraper:
 
     def __init__(self):
         self.session = Session()
+        retry = Retry(total=12, connect=8, backoff_factor=0.1)
+        adapter = HTTPAdapter(max_retries=retry)
+        self.session.mount('http://', adapter)
+        self.session.mount('https://', adapter)
 
         # Request params
         self.url = "https://www46.muenchen.de/termin/index.php"
@@ -29,13 +35,22 @@ class Scraper:
         return self.__scrape_html(html=original_response)
 
     def __get_response_from_website(self):
-        # Get session id
-        self.session.request("GET", self.url)
+        try:
+            # Get session id
+            resp = self.session.request("GET", self.url)
+            resp.raise_for_status()
 
-        # Get real data
-        response = self.session.request(
-            "POST", self.url, data=self.payload, headers=self.headers, params=self.querystring)
-        return response.text
+            # Get real data
+            response = self.session.request(
+                "POST", self.url, data=self.payload, headers=self.headers, params=self.querystring)
+            response.raise_for_status()
+            return response.text
+        except exceptions.RequestException as e:
+            print(e)
+            return ""
+        except exceptions.HTTPError as e:
+            print(e)
+            return ""
 
     def __scrape_html(self, html):
         soup = BeautifulSoup(html, "lxml")

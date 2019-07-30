@@ -2,11 +2,14 @@ from scraper import Scraper
 from telegram_bot import TelegramBot
 import schedule
 import time
+import datetime
 
 MINUTES = 10
 scraper = Scraper()
 bot = TelegramBot()
 
+def get_timestamp():
+    return datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d %X")
 
 def get_message(appointments):
     print(appointments)
@@ -20,13 +23,13 @@ def get_message(appointments):
             print(date, value)
 
     if len(free_appointments) == 0:
-        message = f"Unfortunately I couldn't find any free appointment :( but I will keep you updated in {MINUTES} mins."
+        message = f"{get_timestamp()}: Unfortunately I couldn't find any free appointment :( but I will keep you updated in {MINUTES} mins."
         send_message = False
         print(message)
 
     else:
         url = "https://www46.muenchen.de/termin/index.php"
-        message = f"I found these: {free_appointments}. Get your appointment here: {url}"
+        message = f"{get_timestamp()}: I found these: {free_appointments}. Get your appointment here: {url}"
         send_message = True
         print(message)
 
@@ -34,27 +37,27 @@ def get_message(appointments):
 
 
 def get_appointments():
-    counter = 0
-    while counter < 5:
-        try:
-            appointments = scraper.get_appointments()
-            if type(appointments) is dict:
-                return appointments
+    try:
+        appointments = scraper.get_appointments()
+        if appointments and type(appointments) is dict:
+            return appointments
 
-        except Exception as e:
-            print(e)
-            pass
-
-        counter += 1
+    except Exception as e:
+        print(e)
+        return dict()
 
 
 def job():
     print()
     print('Cron job running...')
     appointments = get_appointments()
-    message, send_message = get_message(appointments)
-    if send_message:
-        bot.send_message(message)
+    if appointments:
+        message, send_message = get_message(appointments)
+        if send_message:
+            bot.send_message(message)
+    else:
+        current_time = str(datetime.datetime.now())
+        print(f"{current_time}: Error in fetching appointments. Trying again in 5 minutes...")
 
 
 job()
