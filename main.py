@@ -54,7 +54,12 @@ def job():
     if appointments:
         message, send_message = get_message(appointments)
         if send_message:
-            bot.send_message(message)
+            try:
+                bot.send_message(message)
+            except Exception as e:
+                print(e)
+                print("Unable to send message via TelegramBot. Aborting until next check.")
+                pass
     else:
         current_time = str(datetime.datetime.now())
         print(f"{current_time}: Error in fetching appointments. Trying again in 5 minutes...")

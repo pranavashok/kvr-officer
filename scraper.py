@@ -1,6 +1,7 @@
 from requests import Session, exceptions
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
+from requests.packages.urllib3.exceptions import ProtocolError
 from bs4 import BeautifulSoup
 import re
 import json
@@ -49,6 +50,9 @@ class Scraper:
             print(e)
             return ""
         except exceptions.HTTPError as e:
+            print(e)
+            return ""
+        except ProtocolError as e:
             print(e)
             return ""
 
