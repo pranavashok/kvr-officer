@@ -8,10 +8,9 @@ import json
 
 
 class Scraper:
-
-    def __init__(self):
+    def __init__(self, appointment_type="Researcher"):
         self.session = Session()
-        retry = Retry(total=12, connect=8, backoff_factor=0.1)
+        retry = Retry(total=12, connect=4, backoff_factor=0.1)
         adapter = HTTPAdapter(max_retries=retry)
         self.session.mount('http://', adapter)
         self.session.mount('https://', adapter)
@@ -19,14 +18,22 @@ class Scraper:
         # Request params
         self.url = "https://www46.muenchen.de/termin/index.php"
         self.querystring = {"cts": "1080627"}
-        self.payload = "step=WEB_APPOINT_SEARCH_BY_CASETYPES&CASETYPES%5BAufenthaltserlaubnis%20Blaue%20Karte%20EU%5D=1"
+        self.type = appointment_type
+        
+        if self.type == "BlueCard":
+            # Blue card
+            self.payload = "step=WEB_APPOINT_SEARCH_BY_CASETYPES&CASETYPES%5BAufenthaltserlaubnis%20Blaue%20Karte%20EU%5D=1"
+        else:
+            # Guest scientist/research associate
+            self.payload = "step=WEB_APPOINT_SEARCH_BY_CASETYPES&CASETYPES%5BAufenthaltserlaubnis%20f%C3%BCr%20Gastwissenschaftler%2C%20wissenschaftliche%20Mitarbeiter%5D=1"
+        ## Can possibly add more here
         self.headers = {
             'Connection': "keep-alive",
             'Cache-Control': "max-age=0",
             'Origin': "https://www46.muenchen.de",
             'Content-Type': "application/x-www-form-urlencoded",
             'Accept-Encoding': "gzip, deflate, br",
-            'cookie': "PHPSESSID=ma0117fsbng4icvfn92fn7umh6",
+            'cookie': "PHPSESSID=balk5ssjisbb6o87dgpnnrtuj6",
             'Host': "www46.muenchen.de",
             'cache-control': "no-cache"
         }
@@ -64,7 +71,12 @@ class Scraper:
             regex=regex, text=script_tag)
 
         appointments = json.loads(appointments_text)
-        return appointments["Termin Wartezone SCIF"]["appoints"]
+        if self.type == "BlueCard":
+            # Blue card
+            return appointments["Termin Wartezone SCIF"]["appoints"]
+        else:
+            # Wissenschaftler
+            return appointments["Termin Wartezone 8"]["appoints"]
 
     def __find_json_object(self, regex, text):
         match = re.search(regex, text)
