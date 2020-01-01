@@ -33,13 +33,15 @@ class Scraper:
             'Origin': "https://www46.muenchen.de",
             'Content-Type': "application/x-www-form-urlencoded",
             'Accept-Encoding': "gzip, deflate, br",
-            'cookie': "PHPSESSID=balk5ssjisbb6o87dgpnnrtuj6",
+            'cookie': "PHPSESSID=e7qujt7f8e285l875rf1kk29q3",
             'Host': "www46.muenchen.de",
             'cache-control': "no-cache"
         }
 
     def get_appointments(self):
         original_response = self.__get_response_from_website()
+        if not original_response:
+            return None
         return self.__scrape_html(html=original_response)
 
     def __get_response_from_website(self):
@@ -55,13 +57,13 @@ class Scraper:
             return response.text
         except exceptions.RequestException as e:
             print(e)
-            return ""
+            return None
         except exceptions.HTTPError as e:
             print(e)
-            return ""
+            return None
         except ProtocolError as e:
             print(e)
-            return ""
+            return None
 
     def __scrape_html(self, html):
         soup = BeautifulSoup(html, "lxml")
@@ -73,10 +75,13 @@ class Scraper:
         appointments = json.loads(appointments_text)
         if self.type == "BlueCard":
             # Blue card
-            return appointments["Termin Wartezone SCIF"]["appoints"]
+            if "Termin Wartezone SCIF" in appointments:
+                return appointments["Termin Wartezone SCIF"]["appoints"]
         else:
             # Wissenschaftler
-            return appointments["Termin Wartezone 8"]["appoints"]
+            if "Termin Wartezone 8" in appointments:
+                return appointments["Termin Wartezone 8"]["appoints"]
+        return None
 
     def __find_json_object(self, regex, text):
         match = re.search(regex, text)

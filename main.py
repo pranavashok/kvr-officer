@@ -5,8 +5,8 @@ import time
 import datetime
 
 MINUTES = 5
-MONTH = '2019-10'
-NUM_CONSECUTIVE = 2
+MONTH = ['2020-01']
+NUM_CONSECUTIVE = 1
 scraper = Scraper(appointment_type="Researcher") # possible options are ["Researcher", "BlueCard"]
 bot = TelegramBot()
 
@@ -65,9 +65,14 @@ def job():
     print()
     print('Cron job running...')
     appointments = get_appointments()
+    if not appointments:
+        current_time = str(datetime.datetime.now())
+        print(f"{current_time}: No appointments found in {MONTH}. Trying again in {MINUTES} minutes...")
+        return
     filtered_appointments = {}
     # Filter specific month
-    filtered_month = list(filter(lambda x: MONTH in x, appointments))
+    # filtered_month = list(filter(lambda x: MONTH in x, appointments))
+    filtered_month = list(filter(lambda x: any(list(map(lambda y: y in x, ['2020-01']))), appointments))
     for date in filtered_month:
         filtered_appointments.update({date: appointments[date]})
     if filtered_appointments:
@@ -88,12 +93,13 @@ job()
 schedule.every(MINUTES).minutes.do(job)
 
 # Special timings
-# schedule.every().day.at("06:00").do(job)
-# schedule.every().day.at("07:01").do(job)
-# schedule.every().day.at("07:31").do(job)
-# schedule.every().day.at("07:59").do(job)
-# schedule.every().day.at("08:00").do(job)
-# schedule.every().day.at("08:01").do(job)
+schedule.every().day.at("06:00").do(job)
+schedule.every().day.at("06:31").do(job)
+schedule.every().day.at("07:01").do(job)
+schedule.every().day.at("07:31").do(job)
+schedule.every().day.at("07:59").do(job)
+schedule.every().day.at("08:00").do(job)
+schedule.every().day.at("08:01").do(job)
 
 while 1:
    schedule.run_pending()
